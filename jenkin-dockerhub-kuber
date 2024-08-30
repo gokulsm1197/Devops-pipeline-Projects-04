@@ -1,0 +1,57 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = 'gokulsm' // Set your Docker Hub username here
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git(
+                    url: 'https://github.com/gokulsm1197/k8s-E-Robo-project.git', 
+                    credentialsId: 'git', 
+                    branch: 'main' // Specify the branch if needed
+                )
+            }
+        }
+
+        stage('Build and Push Docker Images') {
+            steps {
+                script {
+                    def apps = ['cart', 'catalogue', 'mongo', 'payment', 'ratings', 'shipping', 'user', 'web']
+                    
+                    for (app in apps) {
+                        def imageName = "${DOCKER_REGISTRY}/${app}:${BUILD_NUMBER}"
+                        
+                        // Build Docker image
+                        sh "docker build -t ${imageName} ${app}"
+
+                        // Push Docker image
+                        withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                            sh """
+                            echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin
+                            docker push ${imageName}
+                            """
+                        }
+
+                        // Update Helm values.yaml with the new image tag
+                       // sh """
+                        //sed -i 's#${app}:.*#${app}: ${imageName}#g' helm/values.yaml
+                        //"""
+                    }
+                }
+            }
+        }
+
+        stage('Deploy with Helm') {
+            steps {
+                // Use Kubernetes credentials and context for deployment
+                withKubeConfig(caCertificate: '', clusterName: ' kubernetes', contextName: '', credentialsId: 'k8s', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://100.25.218.174:6443') {
+                 sh 'helm install robo helm/ -f helm/values.yaml'
+                  }
+
+                }
+            }
+        }
+    }
