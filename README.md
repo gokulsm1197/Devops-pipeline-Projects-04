@@ -39,7 +39,7 @@ This project involves the deployment of a Go-lang application on a locally hoste
 
 ## Components and Tools Used
 ## Go-lang Application:
-A backend application built using Go-lang, deployed in a Kubernetes cluster, and exposed via a NodePort service for external access.
+A application built using Go-lang, deployed in a Kubernetes cluster, and exposed via a NodePort service for external access.
 
 ## Infrastructure Provisioning with Terraform:
 - **Terraform** is used to automate the creation of AWS infrastructure components
